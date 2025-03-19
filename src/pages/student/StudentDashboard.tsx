@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,54 +32,31 @@ const StudentDashboard = () => {
       setStats([
         {
           title: "Total Projects",
-          value: 5,
+          value: 0,
           description: "Projects submitted",
           icon: <FileText className="h-5 w-5 text-primary" />,
         },
         {
           title: "Pending Review",
-          value: 2,
+          value: 0,
           description: "Awaiting teacher feedback",
           icon: <Clock className="h-5 w-5 text-yellow-500" />,
         },
         {
           title: "Approved",
-          value: 2,
+          value: 0,
           description: "Projects approved",
           icon: <CheckCircle className="h-5 w-5 text-green-500" />,
         },
         {
           title: "Needs Revision",
-          value: 1,
+          value: 0,
           description: "Requires updates",
           icon: <AlertCircle className="h-5 w-5 text-red-500" />,
         },
       ]);
 
-      setActivities([
-        {
-          id: "act1",
-          title: "New Project Submitted",
-          description: "You submitted 'Web Application for Student Management' for review",
-          date: "2023-10-20T09:15:00Z",
-          type: "submission",
-        },
-        {
-          id: "act2",
-          title: "Feedback Received",
-          description: "Dr. Smith provided feedback on 'Machine Learning Algorithm Implementation'",
-          date: "2023-10-18T14:20:00Z",
-          type: "feedback",
-        },
-        {
-          id: "act3",
-          title: "Appointment Scheduled",
-          description: "Discussion scheduled with Prof. Johnson on October 25, 2023 at 2:00 PM",
-          date: "2023-10-17T10:10:00Z",
-          type: "appointment",
-        },
-      ]);
-
+      setActivities([]);
       setIsLoading(false);
     }, 1000);
   }, []);
@@ -159,27 +135,40 @@ const StudentDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {activities.map((activity, i) => (
-                    <div 
-                      key={activity.id}
-                      className="flex gap-4 items-start border-b pb-4 last:border-0 last:pb-0"
+                {activities.length > 0 ? (
+                  <div className="space-y-6">
+                    {activities.map((activity, i) => (
+                      <div 
+                        key={activity.id}
+                        className="flex gap-4 items-start border-b pb-4 last:border-0 last:pb-0"
+                      >
+                        <div className="rounded-full bg-primary/10 p-2 mt-0.5">
+                          {getActivityIcon(activity.type)}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">{activity.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {activity.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(activity.date)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-40 text-center">
+                    <p className="text-muted-foreground mb-2">No recent activities</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => navigate("/student/projects/new")}
                     >
-                      <div className="rounded-full bg-primary/10 p-2 mt-0.5">
-                        {getActivityIcon(activity.type)}
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">{activity.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {activity.description}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(activity.date)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      Submit Your First Project
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -194,13 +183,15 @@ const StudentDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-3 bg-accent/50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <p className="text-sm font-medium">Dr. Smith</p>
-                    </div>
-                    <p className="text-xs mb-1">Machine Learning Project Discussion</p>
-                    <p className="text-xs text-muted-foreground">October 25, 2023 • 2:00 PM</p>
+                  <div className="flex flex-col items-center justify-center h-40 text-center">
+                    <p className="text-muted-foreground mb-2">No upcoming appointments</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => navigate("/student/appointments/schedule")}
+                    >
+                      Schedule Your First Appointment
+                    </Button>
                   </div>
                   
                   <Button variant="outline" className="w-full" size="sm" onClick={() => navigate("/student/appointments")}>

@@ -48,11 +48,11 @@ const ProfileForm = ({ initialStats }: ProfileFormProps) => {
       if (userString) {
         const user = JSON.parse(userString);
         setProfile({
-          name: user.name || "Student User",
-          email: user.email || "student@example.com",
-          department: "Computer Science",
-          year: "3rd Year",
-          bio: "I am a computer science student interested in web development and artificial intelligence.",
+          name: user.name || "",
+          email: user.email || "",
+          department: "",
+          year: "",
+          bio: "",
           avatarUrl: ""
         });
       }

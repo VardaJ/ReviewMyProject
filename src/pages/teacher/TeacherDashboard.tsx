@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,61 +32,31 @@ const TeacherDashboard = () => {
       setStats([
         {
           title: "Total Projects",
-          value: 24,
+          value: 0,
           description: "Projects to review",
           icon: <FileText className="h-5 w-5 text-primary" />,
         },
         {
           title: "Pending Review",
-          value: 8,
+          value: 0,
           description: "Awaiting your feedback",
           icon: <Clock className="h-5 w-5 text-yellow-500" />,
         },
         {
           title: "Approved",
-          value: 14,
+          value: 0,
           description: "Projects approved",
           icon: <CheckCircle className="h-5 w-5 text-green-500" />,
         },
         {
           title: "Needs Revision",
-          value: 2,
+          value: 0,
           description: "Sent back for changes",
           icon: <AlertCircle className="h-5 w-5 text-red-500" />,
         },
       ]);
 
-      setPendingProjects([
-        {
-          id: "proj1",
-          title: "Web Application for Student Management",
-          subject: "Web Development",
-          studentName: "Alex Johnson",
-          submittedAt: "2023-10-20T09:15:00Z",
-        },
-        {
-          id: "proj2",
-          title: "Mobile App Development",
-          subject: "Mobile Computing",
-          studentName: "Sarah Williams",
-          submittedAt: "2023-10-19T14:30:00Z",
-        },
-        {
-          id: "proj3",
-          title: "Database Design Project",
-          subject: "Database Systems",
-          studentName: "Michael Brown",
-          submittedAt: "2023-10-18T11:45:00Z",
-        },
-        {
-          id: "proj4",
-          title: "Network Security Implementation",
-          subject: "Cybersecurity",
-          studentName: "Emily Davis",
-          submittedAt: "2023-10-17T16:20:00Z",
-        },
-      ]);
-
+      setPendingProjects([]);
       setIsLoading(false);
     }, 1000);
   }, []);
@@ -162,35 +131,41 @@ const TeacherDashboard = () => {
                 </Button>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {pendingProjects.map((project) => (
-                    <div 
-                      key={project.id}
-                      className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between border-b pb-4 last:border-0 last:pb-0"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-primary" />
-                          <p className="text-sm font-medium">{project.title}</p>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {project.subject} • Submitted on {formatDate(project.submittedAt)}
-                        </p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <Users className="h-3 w-3 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground">{project.studentName}</p>
-                        </div>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        onClick={() => navigate(`/teacher/projects/${project.id}`)}
-                        className="shrink-0"
+                {pendingProjects.length > 0 ? (
+                  <div className="space-y-6">
+                    {pendingProjects.map((project) => (
+                      <div 
+                        key={project.id}
+                        className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between border-b pb-4 last:border-0 last:pb-0"
                       >
-                        Review
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-primary" />
+                            <p className="text-sm font-medium">{project.title}</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {project.subject} • Submitted on {formatDate(project.submittedAt)}
+                          </p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Users className="h-3 w-3 text-muted-foreground" />
+                            <p className="text-xs text-muted-foreground">{project.studentName}</p>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          onClick={() => navigate(`/teacher/projects/${project.id}`)}
+                          className="shrink-0"
+                        >
+                          Review
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-40 text-center">
+                    <p className="text-muted-foreground">No pending projects to review</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -205,22 +180,8 @@ const TeacherDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-3 bg-accent/50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <p className="text-sm font-medium">Alex Johnson</p>
-                    </div>
-                    <p className="text-xs mb-1">Machine Learning Project Discussion</p>
-                    <p className="text-xs text-muted-foreground">October 25, 2023 • 2:00 PM</p>
-                  </div>
-                  
-                  <div className="p-3 bg-accent/50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <p className="text-sm font-medium">Sarah Williams</p>
-                    </div>
-                    <p className="text-xs mb-1">Mobile App Development Review</p>
-                    <p className="text-xs text-muted-foreground">October 27, 2023 • 10:30 AM</p>
+                  <div className="flex flex-col items-center justify-center h-40 text-center">
+                    <p className="text-muted-foreground">No upcoming appointments</p>
                   </div>
                   
                   <Button variant="outline" className="w-full" size="sm" onClick={() => navigate("/teacher/appointments")}>
