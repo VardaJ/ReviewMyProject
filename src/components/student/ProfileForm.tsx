@@ -9,6 +9,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { User, Upload } from "lucide-react";
 
+interface ProfileStats {
+  projectsCompleted: number;
+  coursesEnrolled: number;
+  averageGrade: number | null;
+}
+
+interface ProfileFormProps {
+  initialStats?: ProfileStats;
+}
+
 interface StudentProfile {
   name: string;
   email: string;
@@ -18,7 +28,7 @@ interface StudentProfile {
   avatarUrl: string;
 }
 
-const ProfileForm = () => {
+const ProfileForm = ({ initialStats }: ProfileFormProps) => {
   const [profile, setProfile] = useState<StudentProfile>({
     name: "",
     email: "",
