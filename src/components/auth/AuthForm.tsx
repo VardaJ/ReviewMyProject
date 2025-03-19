@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,26 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/hooks/use-toast";
 
 type UserRole = "student" | "teacher";
+
+const getRegisteredUsers = () => {
+  const storedUsers = localStorage.getItem("registeredUsers");
+  return storedUsers ? JSON.parse(storedUsers) : [];
+};
+
+const saveRegisteredUser = (user: { email: string; password: string; role: UserRole; name: string }) => {
+  const users = getRegisteredUsers();
+  if (!users.some((u: any) => u.email === user.email)) {
+    users.push(user);
+    localStorage.setItem("registeredUsers", JSON.stringify(users));
+    return true;
+  }
+  return false;
+};
+
+const validateUser = (email: string, password: string) => {
+  const users = getRegisteredUsers();
+  return users.find((user: any) => user.email === email && user.password === password);
+};
 
 const AuthForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,36 +42,78 @@ const AuthForm = () => {
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+    const name = formData.get("name") as string || "";
 
-    // This would be replaced with actual API calls in a real implementation
     try {
       setTimeout(() => {
         setIsLoading(false);
-        
-        // Store user info and token in localStorage for demo purposes
-        // In a real app, you would handle proper authentication flow
-        localStorage.setItem("user", JSON.stringify({ 
-          email, 
-          role,
-          name: role === "student" ? "Student User" : "Teacher User",
-          id: Math.random().toString(36).substring(2)
-        }));
-        localStorage.setItem("isAuthenticated", "true");
-        
-        toast({
-          title: `${isLogin ? "Login" : "Registration"} successful!`,
-          description: `Welcome to the ${role} dashboard`,
-        });
-        
-        // Redirect based on role
-        navigate(role === "student" ? "/student/dashboard" : "/teacher/dashboard");
+
+        if (isLogin) {
+          const user = validateUser(email, password);
+          
+          if (user) {
+            localStorage.setItem("user", JSON.stringify({
+              email,
+              role: user.role,
+              name: user.name,
+              id: user.id || Math.random().toString(36).substring(2)
+            }));
+            localStorage.setItem("isAuthenticated", "true");
+            
+            toast({
+              title: "Login successful!",
+              description: `Welcome to the ${user.role} dashboard`,
+            });
+            
+            navigate(user.role === "student" ? "/student/dashboard" : "/teacher/dashboard");
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Authentication failed",
+              description: "Invalid email or password",
+            });
+          }
+        } else {
+          const newUser = {
+            email,
+            password,
+            role,
+            name,
+            id: Math.random().toString(36).substring(2)
+          };
+          
+          const registered = saveRegisteredUser(newUser);
+          
+          if (registered) {
+            localStorage.setItem("user", JSON.stringify({
+              email,
+              role,
+              name,
+              id: newUser.id
+            }));
+            localStorage.setItem("isAuthenticated", "true");
+            
+            toast({
+              title: "Registration successful!",
+              description: `Welcome to the ${role} dashboard`,
+            });
+            
+            navigate(role === "student" ? "/student/dashboard" : "/teacher/dashboard");
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Registration failed",
+              description: "This email is already registered",
+            });
+          }
+        }
       }, 1000);
     } catch (error) {
       setIsLoading(false);
       toast({
         variant: "destructive",
         title: "Authentication failed",
-        description: "Please check your credentials and try again",
+        description: "An unexpected error occurred",
       });
     }
   };
