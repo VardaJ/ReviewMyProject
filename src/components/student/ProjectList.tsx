@@ -1,64 +1,57 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Clock, FileText, CheckCircle, AlertCircle, Calendar } from "lucide-react";
+import axios from "axios";
+import { useToast } from "@/hooks/use-toast";
 
 interface Project {
-  id: string;
-  title: string;
-  subject: string;
+  _id: string;
+  groupName: string;
+  projectTitle: string;
   description: string;
+  fileUrls: string[];
+  uploadedBy: string;
   status: "pending" | "approved" | "rejected";
-  submittedAt: string;
-  reviewedAt?: string;
-  teacherComments?: string;
+  createdAt: string;
 }
-
-const mockProjects: Project[] = [
-  {
-    id: "1",
-    title: "Machine Learning Algorithm Implementation",
-    subject: "Artificial Intelligence",
-    description: "Implementation of a neural network for image classification using TensorFlow.",
-    status: "approved",
-    submittedAt: "2023-10-15T10:30:00Z",
-    reviewedAt: "2023-10-18T14:20:00Z",
-    teacherComments: "Excellent implementation with good documentation. Approved."
-  },
-  {
-    id: "2",
-    title: "Web Application for Student Management",
-    subject: "Web Development",
-    description: "A React-based web application for managing student records and attendance.",
-    status: "pending",
-    submittedAt: "2023-10-20T09:15:00Z"
-  },
-  {
-    id: "3",
-    title: "Analysis of Sorting Algorithms",
-    subject: "Algorithms",
-    description: "Comparative analysis of different sorting algorithms and their performance metrics.",
-    status: "rejected",
-    submittedAt: "2023-10-10T11:45:00Z",
-    reviewedAt: "2023-10-12T16:30:00Z",
-    teacherComments: "The analysis lacks depth. Please include more performance metrics and visualization."
-  }
-];
 
 const ProjectList = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate API call to fetch projects
-    setTimeout(() => {
-      setProjects(mockProjects);
-      setIsLoading(false);
-    }, 1000);
+    const fetchProjects = async () => {
+      try {
+        const userString = localStorage.getItem('user');
+        if (!userString) {
+          throw new Error('User not found');
+        } else{
+          console.log('User data from localStorage:', userString);
+
+        }
+
+        const userData = JSON.parse(userString);
+        console.log('Parsed user data:', userData);
+        const response = await axios.get(`/api/projects/user/${userData.id}`);
+        setProjects(response.data);
+      } catch (error: any) {
+        console.error('Error fetching projects:', error);
+        toast({
+          title: "Error fetching projects",
+          description: error.message || "Failed to load projects",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
   }, []);
 
   const getStatusColor = (status: string) => {
@@ -99,70 +92,57 @@ const ProjectList = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">My Projects</h2>
-        <Button onClick={() => navigate("/student/projects/new")}>
+        <h2 className="text-3xl font-bold tracking-tight">My Projects</h2>
+        <Button onClick={() => navigate('/student/projects/new')}>
           Submit New Project
         </Button>
       </div>
 
       {projects.length === 0 ? (
-        <Card className="glass-card">
-          <CardContent className="flex flex-col items-center justify-center h-40">
-            <FileText className="h-10 w-10 text-gray-400 mb-4" />
-            <p className="text-muted-foreground text-center">You haven't submitted any projects yet.</p>
-            <Button variant="link" onClick={() => navigate("/student/projects/new")}>
-              Create your first project
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FileText className="h-12 w-12 text-gray-400 mb-4" />
+            <p className="text-xl font-medium text-gray-600 mb-2">No projects yet</p>
+            <p className="text-gray-500 mb-4">Submit your first project to get started</p>
+            <Button onClick={() => navigate('/student/projects/new')}>
+              Submit New Project
             </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-6">
           {projects.map((project) => (
-            <Card key={project.id} className="overflow-hidden transition-all hover:shadow-md glass-card">
-              <CardHeader className="pb-4">
-                <div className="flex justify-between items-start mb-2">
-                  <CardTitle className="text-xl">{project.title}</CardTitle>
-                  <Badge 
-                    variant="outline" 
-                    className={`flex items-center gap-1 ${getStatusColor(project.status)}`}
-                  >
+            <Card key={project._id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>{project.projectTitle}</CardTitle>
+                    <CardDescription>{project.groupName}</CardDescription>
+                  </div>
+                  <Badge variant="outline" className={getStatusColor(project.status)}>
                     {getStatusIcon(project.status)}
-                    <span className="capitalize">{project.status}</span>
+                    <span className="ml-2 capitalize">{project.status}</span>
                   </Badge>
                 </div>
-                <CardDescription>
-                  <span className="font-medium text-primary">{project.subject}</span> • Submitted {formatDate(project.submittedAt)}
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                  {project.description}
-                </p>
-                
-                {project.reviewedAt && (
-                  <div className="bg-secondary/40 p-3 rounded-md mt-2">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Reviewed on {formatDate(project.reviewedAt)}
-                    </div>
-                    {project.teacherComments && (
-                      <p className="text-sm">
-                        <span className="font-medium">Teacher's feedback:</span> {project.teacherComments}
-                      </p>
-                    )}
-                  </div>
-                )}
+                <p className="text-gray-600">{project.description}</p>
+                <div className="mt-4 flex items-center text-sm text-gray-500">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Submitted on {formatDate(project.createdAt)}
+                </div>
               </CardContent>
-              <CardFooter className="border-t bg-secondary/20 flex justify-between">
-                <Button variant="ghost" size="sm" onClick={() => navigate(`/student/projects/${project.id}`)}>
-                  View Details
+              <CardFooter className="flex gap-2">
+                <Button variant="outline" onClick={() => window.open(project.fileUrls[0], '_blank')}>
+                  View Files
                 </Button>
-                
-                {project.status === "approved" && (
-                  <Button variant="outline" size="sm" className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    Schedule Discussion
-                  </Button>
-                )}
+                <Button 
+                  onClick={() => navigate('/student/appointments', { 
+                    state: { projectId: project._id } 
+                  })}
+                >
+                  Schedule Discussion
+                </Button>
               </CardFooter>
             </Card>
           ))}

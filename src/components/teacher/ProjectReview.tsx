@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,36 +6,48 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Calendar, Download, FileText, User } from "lucide-react";
+import axios from "axios";
 
 interface ProjectReviewProps {
   projectId: string;
 }
 
+interface Project {
+  _id: string;
+  groupNumber: string;
+  groupName: string;
+  projectTitle: string;
+  description: string;
+  fileUrls: string[];
+  uploadedBy: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
+
 const ProjectReview = ({ projectId }: ProjectReviewProps) => {
   const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(false);
+  const [project, setProject] = useState<Project | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  // Mock project data
-  const project = {
-    id: projectId,
-    title: "Machine Learning Algorithm Implementation",
-    subject: "Artificial Intelligence",
-    description: "Implementation of a neural network for image classification using TensorFlow. The project includes a detailed report on the architecture chosen, the dataset used for training and testing, and performance metrics. The implementation is done in Python using TensorFlow and Keras libraries.",
-    status: "pending",
-    submittedAt: "2023-10-15T10:30:00Z",
-    student: {
-      id: "s123",
-      name: "Alex Johnson",
-      email: "alex.johnson@example.com"
-    },
-    files: [
-      { name: "project_report.pdf", size: "2.4 MB" },
-      { name: "source_code.zip", size: "1.8 MB" },
-      { name: "presentation.pptx", size: "4.2 MB" }
-    ]
-  };
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const response = await axios.get(`/api/projects/${projectId}`);
+        setProject(response.data);
+      } catch (error: any) {
+        console.error('Error fetching project:', error);
+        toast({
+          title: "Error",
+          description: error.response?.data?.message || "Failed to load project details",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchProject();
+  }, [projectId, toast]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -49,35 +60,63 @@ const ProjectReview = ({ projectId }: ProjectReviewProps) => {
     }).format(date);
   };
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await axios.patch(`/api/projects/${projectId}/status`, {
+        status: 'approved'
+      });
       toast({
         title: "Project approved",
         description: "Feedback has been sent to the student",
       });
-      setLoading(false);
       navigate("/teacher/projects");
-    }, 1000);
+    } catch (error: any) {
+      console.error('Error approving project:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to approve project",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await axios.patch(`/api/projects/${projectId}/status`, {
+        status: 'rejected'
+      });
       toast({
         title: "Project needs revision",
         description: "Feedback has been sent to the student",
       });
-      setLoading(false);
       navigate("/teacher/projects");
-    }, 1000);
+    } catch (error: any) {
+      console.error('Error rejecting project:', error);
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to reject project",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSchedule = () => {
-    navigate(`/teacher/schedule/${projectId}`);
+    navigate(`/teacher/appointments`, { state: { projectId } });
   };
+
+  if (!project) {
+    return (
+      <div className="w-full flex justify-center items-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -85,14 +124,29 @@ const ProjectReview = ({ projectId }: ProjectReviewProps) => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">{project.title}</CardTitle>
+              <CardTitle className="text-2xl">{project.projectTitle}</CardTitle>
               <CardDescription className="mt-1">
-                <span className="font-medium text-primary">{project.subject}</span> • Submitted {formatDate(project.submittedAt)}
+                Group {project.groupNumber} • Submitted {formatDate(project.createdAt)}
               </CardDescription>
             </div>
-            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
-              Pending Review
+            <Badge 
+              variant="outline" 
+              className={`flex items-center gap-1 ${
+                project.status === 'approved' 
+                  ? 'bg-green-100 text-green-800 border-green-200' 
+                  : project.status === 'rejected'
+                  ? 'bg-red-100 text-red-800 border-red-200'
+                  : 'bg-yellow-100 text-yellow-800 border-yellow-200'
+              }`}
+            >
+              <span className={`h-2 w-2 rounded-full ${
+                project.status === 'approved' 
+                  ? 'bg-green-500' 
+                  : project.status === 'rejected'
+                  ? 'bg-red-500'
+                  : 'bg-yellow-500'
+              }`}></span>
+              {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
             </Badge>
           </div>
         </CardHeader>
@@ -100,9 +154,9 @@ const ProjectReview = ({ projectId }: ProjectReviewProps) => {
           <div className="flex items-start gap-4 p-4 bg-secondary/30 rounded-lg">
             <User className="w-5 h-5 mt-1 text-primary" />
             <div>
-              <h4 className="text-sm font-medium">Student Information</h4>
-              <p className="text-sm mt-1">{project.student.name}</p>
-              <p className="text-sm text-muted-foreground">{project.student.email}</p>
+              <h4 className="text-sm font-medium">Group Information</h4>
+              <p className="text-sm mt-1">Group {project.groupNumber}</p>
+              <p className="text-sm text-muted-foreground">{project.groupName}</p>
             </div>
           </div>
           
@@ -114,17 +168,21 @@ const ProjectReview = ({ projectId }: ProjectReviewProps) => {
           <div>
             <h4 className="text-sm font-medium mb-2">Attached Files</h4>
             <div className="space-y-2">
-              {project.files.map((file, index) => (
+              {project.fileUrls.map((fileUrl, index) => (
                 <div 
                   key={index} 
                   className="flex items-center justify-between p-3 bg-secondary/40 rounded-md hover:bg-secondary/60 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-primary" />
-                    <span className="text-sm">{file.name}</span>
-                    <span className="text-xs text-muted-foreground">({file.size})</span>
+                    <span className="text-sm">File {index + 1}</span>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0"
+                    onClick={() => window.open(fileUrl, '_blank')}
+                  >
                     <Download className="h-4 w-4" />
                   </Button>
                 </div>
@@ -161,7 +219,7 @@ const ProjectReview = ({ projectId }: ProjectReviewProps) => {
               variant="destructive" 
               className="flex items-center gap-1"
               onClick={handleReject}
-              disabled={loading || !feedback}
+              disabled={loading || !feedback || project.status !== 'pending'}
             >
               {loading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -176,7 +234,7 @@ const ProjectReview = ({ projectId }: ProjectReviewProps) => {
               variant="default" 
               className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
               onClick={handleApprove}
-              disabled={loading}
+              disabled={loading || project.status !== 'pending'}
             >
               {loading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

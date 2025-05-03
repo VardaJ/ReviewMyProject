@@ -53,7 +53,7 @@ const MainNavbar = () => {
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" />
-            <span className="text-xl font-semibold">Project Approval</span>
+            <span className="text-xl font-semibold">Review My Project</span>
           </Link>
         </div>
         

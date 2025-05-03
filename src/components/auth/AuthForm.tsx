@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from 'uuid';
 
 type UserRole = "student" | "teacher";
 
@@ -56,7 +57,7 @@ const AuthForm = () => {
               email,
               role: user.role,
               name: user.name,
-              id: user.id || Math.random().toString(36).substring(2)
+              id: user.id || uuidv4()
             }));
             localStorage.setItem("isAuthenticated", "true");
             
@@ -122,7 +123,7 @@ const AuthForm = () => {
     <div className="w-full max-w-md mx-auto animate-fade-in">
       <Card className="glass-card">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Project Approval Platform</CardTitle>
+          <CardTitle className="text-2xl text-center">Review My Project</CardTitle>
           <CardDescription className="text-center">
             Sign in or create an account to continue
           </CardDescription>
@@ -250,7 +251,7 @@ const AuthForm = () => {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4">
           <div className="text-sm text-muted-foreground text-center">
-            This is a demo application. In a production environment, authentication would be handled securely through API routes and MongoDB.
+            
           </div>
         </CardFooter>
       </Card>

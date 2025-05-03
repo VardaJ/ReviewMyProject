@@ -47,7 +47,7 @@ const Index = () => {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                    Streamlined Project Approval Platform
+                    Review My Project
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
                     Connect students and teachers in a simplified workflow for project submissions, reviews, and discussions.

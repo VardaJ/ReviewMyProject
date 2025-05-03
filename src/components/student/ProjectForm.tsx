@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,16 +6,65 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Upload } from "lucide-react";
+import { uploadProject } from "@/api/projectApi";
+import { useNavigate } from "react-router-dom";
 
 const ProjectForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setFiles(prevFiles => [...prevFiles, ...newFiles]);
+      
+      // Check file size and type
+      const invalidFiles = newFiles.filter(file => {
+        const validTypes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'image/jpeg',
+          'image/png',
+          'application/zip'
+        ];
+        
+        if (!validTypes.includes(file.type)) {
+          toast({
+            title: "Invalid file type",
+            description: `${file.name} is not a valid file type. Only PDF, DOCX, images, or ZIP files are allowed.`,
+            variant: "destructive",
+          });
+          return true;
+        }
+        
+        if (file.size > 20 * 1024 * 1024) { // 20MB in bytes
+          toast({
+            title: "File too large",
+            description: `${file.name} is too large. Maximum file size is 20MB.`,
+            variant: "destructive",
+          });
+          return true;
+        }
+        
+        return false;
+      });
+      
+      // Filter out invalid files
+      const validFiles = newFiles.filter(file => !invalidFiles.includes(file));
+      
+      // Check total number of files
+      if (files.length + validFiles.length > 5) {
+        toast({
+          title: "Too many files",
+          description: "Maximum 5 files allowed.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setFiles(prevFiles => [...prevFiles, ...validFiles]);
     }
   };
 
@@ -28,20 +76,79 @@ const ProjectForm = () => {
     event.preventDefault();
     setIsLoading(true);
 
-    const formData = new FormData(event.currentTarget);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const formData = new FormData();
+      const form = event.currentTarget;
+      const titleInput = form.querySelector<HTMLInputElement>('#title');
+      const subjectInput = form.querySelector<HTMLInputElement>('#subject');
+      const descriptionInput = form.querySelector<HTMLTextAreaElement>('#description');
+
+      if (!titleInput || !subjectInput || !descriptionInput) {
+        throw new Error('Form fields not found');
+      }
+
+      // Get and validate user data
+      const userString = localStorage.getItem('user');
+      console.log('User data from localStorage:', userString);
+
+      if (!userString) {
+        console.error('No user data found in localStorage');
+        throw new Error('Please log in to submit a project');
+      }
+
+      let userData;
+      try {
+        userData = JSON.parse(userString);
+        console.log('Parsed user data:', userData);
+      } catch (e) {
+        console.error('Failed to parse user data:', e);
+        throw new Error('Invalid user data. Please log in again');
+      }
+
+      if (!userData || !userData.id) {
+        console.error('User ID not found in data:', userData);
+        throw new Error('User ID not found. Please log in again');
+      }
+
+      // Log the user ID we're about to use
+      console.log('Using user ID:', userData.id);
+
+      formData.append('groupName', titleInput.value);
+      formData.append('projectTitle', subjectInput.value);
+      formData.append('description', descriptionInput.value);
+      formData.append('uploadedBy', userData.id);
+      
+      // Append files with the correct field name
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      // Log the FormData contents for debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(`FormData: ${key} = ${value}`);
+      }
+
+      await uploadProject(formData);
+
       toast({
         title: "Project submitted successfully",
         description: "Your project has been sent for approval",
       });
       
-      // Reset form
-      event.currentTarget.reset();
+      // Reset form and navigate to projects list
+      form.reset();
       setFiles([]);
-    }, 1500);
+      navigate('/student/projects');
+    } catch (error: any) {
+      console.error('Error submitting project:', error);
+      toast({
+        title: "Error submitting project",
+        description: error.message || "Failed to submit project. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -98,7 +205,7 @@ const ProjectForm = () => {
                     <span className="font-semibold">Click to upload</span> or drag and drop
                   </p>
                   <p className="text-xs text-gray-500">
-                    PDF, DOCX, images, or ZIP (MAX. 10MB)
+                    PDF, DOCX, images, or ZIP (MAX. 20MB per file, up to 5 files)
                   </p>
                 </div>
                 <Input
